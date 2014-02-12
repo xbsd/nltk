@@ -18,6 +18,8 @@
 >>> # Tokenization done, now convert to nltk.Text
 ... 
 >>> text = nltk.Text(tokens)
+
+
 >>> type(text)
 <class 'nltk.text.Text'>
 >>> text[1000:1010]
@@ -52,4 +54,21 @@ o local navigation Accessibility Help BBC navigation News Sport Weather Capital
 mpics 2014 Sochi 2014 : Day five Live BBC Sport Dead heat in women & # 039 ; s 
 ad heat in women & # 039 ; s downhill BBC Sport Vogt wins historic ski jumping 
 t Vogt wins historic ski jumping gold BBC Sport Day-by-day guide to events BBC 
-...
+
+
+>>> f = open("AChristmasCarol.txt")
+>>> raw = f.read()
+>>> tokens = nltk.word_tokenize(raw)
+>>> words = [w.lower() for w in tokens]
+>>> words[:20]
+['title', ':', 'a', 'christmas', 'carol', 'author', ':', 'charles', 'dickens', 'illustrator', ':', 'arthur', 'rackham', 'release', 'date', ':', 'december', '24', ',', '2007']
+>>> vocab = sorted(set(words))
+>>> text = nltk.Text(tokens)
+>>> text[:20]
+['Title', ':', 'A', 'Christmas', 'Carol', 'Author', ':', 'Charles', 'Dickens', 'Illustrator', ':', 'Arthur', 'Rackham', 'Release', 'Date', ':', 'December', '24', ',', '2007']
+
+
+
+
+
+
