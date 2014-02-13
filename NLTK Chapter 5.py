@@ -1,4 +1,3 @@
-
 >>> from nltk.corpus import names
 
 >>> type(names.words('male.txt'))
@@ -108,3 +107,53 @@ Most Informative Features
 ...     suffix_fdist.inc(word[-3:])
 ... 
 >>> common_suffixes = suffix_fdist.keys()[:100]
+
+
+
+
+>>> # Parts of Speech Tagging with Decision Trees
+... 
+>>> from nltk.corpus import brown
+>>> suffix_fdist = nltk.FreqDist()
+>>> for word in brown.words():
+...     word = word.lower()
+...     suffix_fdist.inc(word[-1:])
+...     suffix_fdist.inc(word[-2:])
+...     suffix_fdist.inc(word[-3:])
+... 
+>>> common_suffixes = suffix_fdist.keys()[:100]
+>>> 
+>>> 
+>>> def pos_features(word):
+...     features = {}
+...     for suffix in common_suffixes:
+...             features['endswith(%s)' % suffix] = word.lower().endswith(suffix)
+...     return features
+... 
+>>> tagged_words = brown.tagged_words(categories='news')
+>>> featuresets = [(pos_features(n), g) for (n,g) in tagged_words]
+>>> size = int(len(featuresets) * 0.1)
+>>> train_set, test_set = featuresets[size:], featuresets[:size]
+>>> classifier = nltk.DecisionTreeClassifier.train(train_set)
+
+
+>>> nltk.classify.accuracy(classifier, test_set)
+0.62705121829935351
+ 	
+>>> classifier.classify(pos_features('cats'))
+'NNS'
+
+>>> print classifier.pseudocode(depth=4)
+if endswith(,) == True: return ','
+if endswith(,) == False:
+  if endswith(the) == True: return 'AT'
+  if endswith(the) == False:
+    if endswith(s) == True:
+      if endswith(is) == True: return 'BEZ'
+      if endswith(is) == False: return 'VBZ'
+    if endswith(s) == False:
+      if endswith(.) == True: return '.'
+      if endswith(.) == False: return 'NN'
+
+
+
