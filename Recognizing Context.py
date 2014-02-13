@@ -119,9 +119,26 @@ class ConsecutivePosTagger(nltk.TaggerI): [2]
 Example 6.7 (code_consecutive_pos_tagger.py): Figure 6.7: Part of Speech Tagging with a Consecutive Classifier
 Other Methods for Sequence Classification
 
-One shortcoming of this approach is that we commit to every decision that we make. For example, if we decide to label a word as a noun, but later find evidence that it should have been a verb, there's no way to go back and fix our mistake. One solution to this problem is to adopt a transformational strategy instead. Transformational joint classifiers work by creating an initial assignment of labels for the inputs, and then iteratively refining that assignment in an attempt to repair inconsistencies between related inputs. The Brill tagger, described in (1), is a good example of this strategy.
+One shortcoming of this approach is that we commit to every decision that we make. For example, if we decide to label 
+a word as a noun, but later find evidence that it should have been a verb, there's no way to go back and fix our 
+mistake. One solution to this problem is to adopt a transformational strategy instead. Transformational joint 
+classifiers work by creating an initial assignment of labels for the inputs, and then iteratively refining that 
+assignment in an attempt to repair inconsistencies between related inputs. The Brill tagger, described in (1), is a 
+good example of this strategy.
 
-Another solution is to assign scores to all of the possible sequences of part-of-speech tags, and to choose the sequence whose overall score is highest. This is the approach taken by Hidden Markov Models. Hidden Markov Models are similar to consecutive classifiers in that they look at both the inputs and the history of predicted tags. However, rather than simply finding the single best tag for a given word, they generate a probability distribution over tags. These probabilities are then combined to calculate probability scores for tag sequences, and the tag sequence with the highest probability is chosen. Unfortunately, the number of possible tag sequences is quite large. Given a tag set with 30 tags, there are about 600 trillion (3010) ways to label a 10-word sentence. In order to avoid considering all these possible sequences separately, Hidden Markov Models require that the feature extractor only look at the most recent tag (or the most recent n tags, where n is fairly small). Given that restriction, it is possible to use dynamic programming (4.7) to efficiently find the most likely tag sequence. In particular, for each consecutive word index i, a score is computed for each possible current and previous tag. This same basic approach is taken by two more advanced models, called Maximum Entropy Markov Models and Linear-Chain Conditional Random Field Models; but different algorithms are used to find scores for tag sequences.
+Another solution is to assign scores to all of the possible sequences of part-of-speech tags, and to choose the 
+sequence whose overall score is highest. This is the approach taken by Hidden Markov Models. Hidden Markov Models are 
+similar to consecutive classifiers in that they look at both the inputs and the history of predicted tags. However, 
+rather than simply finding the single best tag for a given word, they generate a probability distribution over tags. 
+These probabilities are then combined to calculate probability scores for tag sequences, and the tag sequence with the 
+highest probability is chosen. Unfortunately, the number of possible tag sequences is quite large. Given a tag set 
+with 30 tags, there are about 600 trillion (3010) ways to label a 10-word sentence. In order to avoid considering all 
+these possible sequences separately, Hidden Markov Models require that the feature extractor only look at the most 
+recent tag (or the most recent n tags, where n is fairly small). Given that restriction, it is possible to use dynamic 
+programming (4.7) to efficiently find the most likely tag sequence. In particular, for each consecutive word index i, 
+a score is computed for each possible current and previous tag. This same basic approach is taken by two more advanced 
+models, called Maximum Entropy Markov Models and Linear-Chain Conditional Random Field Models; but different algorithms
+are used to find scores for tag sequences.
 
 6.2   Further Examples of Supervised Classification
 
