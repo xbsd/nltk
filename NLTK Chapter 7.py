@@ -166,4 +166,61 @@ cp = nltk.RegexpParser(grammar)
   (NP the/DT cat/NN))
 
 
+*IMPORTANT*
+Representing Chunks: Tags vs Trees  -- IOB Naming
 
+As befits their intermediate status between tagging and parsing (8), chunk structures can be represented using 
+either tags or trees. The most widespread file representation uses IOB tags. In this scheme, each token is tagged 
+with one of three special chunk tags, I (inside), O (outside), or B (begin). A token is tagged as B if it marks the 
+beginning of a chunk. Subsequent tokens within the chunk are tagged I. All other tokens are tagged O. The B and I 
+tags are suffixed with the chunk type, e.g. B-NP, I-NP. Of course, it is not necessary to specify a chunk type for 
+tokens that appear outside a chunk, so these are just labeled O. An example of this scheme is shown in 7.6.
+
+Figure 7.6: Tag Representation of Chunk Structures
+IOB tags have become the standard way to represent chunk structures in files, and we will also be using this format. 
+Here is how the information in 7.6 would appear in a file:
+
+We PRP B-NP
+saw VBD O
+the DT B-NP
+little JJ I-NP
+yellow JJ I-NP
+dog NN I-NP
+
+
+We can use the NLTK corpus module to access a larger amount of chunked text. The CoNLL 2000 corpus contains 270k 
+words of Wall Street Journal text, divided into "train" and "test" portions, annotated with part-of-speech tags and 
+chunk tags in the IOB format. We can access the data using nltk.corpus.conll2000. Here is an example that reads the 
+100th sentence of the "train" portion of the corpus:
+
+ 	
+>>> from nltk.corpus import conll2000
+>>> print conll2000.chunked_sents('train.txt')[99]
+(S
+  (PP Over/IN)
+  (NP a/DT cup/NN)
+  (PP of/IN)
+  (NP coffee/NN)
+  ,/,
+  (NP Mr./NNP Stone/NNP)
+  (VP told/VBD)
+  (NP his/PRP$ story/NN)
+  ./.)
+
+
+As you can see, the CoNLL 2000 corpus contains three chunk types: NP chunks, which we have already seen; VP chunks 
+such as has already delivered; and PP chunks such as because of. Since we are only interested in the NP chunks right 
+now, we can use the chunk_types argument to select them:
+
+ 	
+>>> print conll2000.chunked_sents('train.txt', chunk_types=['NP'])[99]
+(S
+  Over/IN
+  (NP a/DT cup/NN)
+  of/IN
+  (NP coffee/NN)
+  ,/,
+  (NP Mr./NNP Stone/NNP)
+  told/VBD
+  (NP his/PRP$ story/NN)
+  ./.)
