@@ -20,7 +20,7 @@ We will begin by considering the task of noun phrase chunking, or NP-chunking, w
 corresponding to individual noun phrases. For example, here is some Wall Street Journal text with NP-chunks 
 marked using brackets:
 
-(2)		[ The/DT market/NN ] for/IN [ system-management/NN software/NN ] for/IN [ Digital/NNP ] [ 's/POS hardware/NN ] 
+[ The/DT market/NN ] for/IN [ system-management/NN software/NN ] for/IN [ Digital/NNP ] [ 's/POS hardware/NN ] 
 is/VBZ fragmented/JJ enough/RB that/IN [ a/DT giant/NN ] such/JJ as/IN [ Computer/NNP Associates/NNPS ] 
 should/MD do/VB well/RB there/RB ./.
 
@@ -224,3 +224,262 @@ now, we can use the chunk_types argument to select them:
   told/VBD
   (NP his/PRP$ story/NN)
   ./.)
+
+
+
+As you can see, the CoNLL 2000 corpus contains three chunk types: NP chunks, which we have already seen; VP chunks 
+such as has already delivered; and PP chunks such as because of. Since we are only interested in the NP chunks right 
+now, we can use the chunk_types argument to select them:
+
+ 	
+>>> print conll2000.chunked_sents('train.txt', chunk_types=['NP'])[99]
+(S
+  Over/IN
+  (NP a/DT cup/NN)
+  of/IN
+  (NP coffee/NN)
+  ,/,
+  (NP Mr./NNP Stone/NNP)
+  told/VBD
+  (NP his/PRP$ story/NN)
+  ./.)
+Simple Evaluation and Baselines
+
+Now that we can access a chunked corpus, we can evaluate chunkers. We start off by establishing a baseline for the 
+trivial chunk parser cp that creates no chunks:
+
+ 	
+>>> from nltk.corpus import conll2000
+>>> cp = nltk.RegexpParser("")
+>>> test_sents = conll2000.chunked_sents('test.txt', chunk_types=['NP'])
+>>> print cp.evaluate(test_sents)
+ChunkParse score:
+    IOB Accuracy:  43.4%
+    Precision:      0.0%
+    Recall:         0.0%
+    F-Measure:      0.0%
+The IOB tag accuracy indicates that more than a third of the words are tagged with O, i.e. not in an NP chunk. 
+However, since our tagger did not find any chunks, its precision, recall, and f-measure are all zero. Now let's 
+try a naive regular expression chunker that looks for tags beginning with letters that are characteristic of noun 
+phrase tags (e.g. CD, DT, and JJ).
+
+ 	
+>>> grammar = r"NP: {<[CDJNP].*>+}"
+>>> cp = nltk.RegexpParser(grammar)
+>>> print cp.evaluate(test_sents)
+ChunkParse score:
+    IOB Accuracy:  87.7%
+    Precision:     70.6%
+    Recall:        67.8%
+    F-Measure:     69.2%
+As you can see, this approach achieves decent results. However, we can improve on it by adopting a more data-driven 
+approach, where we use the training corpus to find the chunk tag (I, O, or B) that is most likely for each 
+part-of-speech tag. In other words, we can build a chunker using a unigram tagger (5.4). But rather than trying to 
+determine the correct part-of-speech tag for each word, we are trying to determine the correct chunk tag, given each 
+word's part-of-speech tag.
+
+In 7.8, we define the UnigramChunker class, which uses a unigram tagger to label sentences with chunk tags. Most of 
+the code in this class is simply used to convert back and forth between the chunk tree representation used by NLTK's 
+ChunkParserI interface, and the IOB representation used by the embedded tagger. The class defines two methods: a 
+constructor [1] which is called when we build a new UnigramChunker; and the parse method [3] which is used to chunk 
+new sentences.
+
+ 	
+class UnigramChunker(nltk.ChunkParserI):
+    def __init__(self, train_sents): [1]
+        train_data = [[(t,c) for w,t,c in nltk.chunk.tree2conlltags(sent)]
+                      for sent in train_sents]
+        self.tagger = nltk.UnigramTagger(train_data) [2]
+
+    def parse(self, sentence): [3]
+        pos_tags = [pos for (word,pos) in sentence]
+        tagged_pos_tags = self.tagger.tag(pos_tags)
+        chunktags = [chunktag for (pos, chunktag) in tagged_pos_tags]
+        conlltags = [(word, pos, chunktag) for ((word,pos),chunktag)
+                     in zip(sentence, chunktags)]
+        return nltk.chunk.conlltags2tree(conlltags)
+        
+
+The constructor [1] expects a list of training sentences, which will be in the form of chunk trees. It first converts 
+training data to a form that suitable for training the tagger, using tree2conlltags to map each chunk tree to a list 
+of word,tag,chunk triples. It then uses that converted training data to train a unigram tagger, and stores it in 
+self.tagger for later use.
+
+The parse method [3] takes a tagged sentence as its input, and begins by extracting the part-of-speech tags from that 
+sentence. It then tags the part-of-speech tags with IOB chunk tags, using the tagger self.tagger that was trained in 
+the constructor. Next, it extracts the chunk tags, and combines them with the original sentence, to yield conlltags. 
+Finally, it uses conlltags2tree to convert the result back into a chunk tree.
+
+Now that we have UnigramChunker, we can train it using the CoNLL 2000 corpus, and test its resulting performance:
+
+ 	
+>>> test_sents = conll2000.chunked_sents('test.txt', chunk_types=['NP'])
+>>> train_sents = conll2000.chunked_sents('train.txt', chunk_types=['NP'])
+>>> unigram_chunker = UnigramChunker(train_sents)
+>>> print unigram_chunker.evaluate(test_sents)
+ChunkParse score:
+    IOB Accuracy:  92.9%
+    Precision:     79.9%
+    Recall:        86.8%
+    F-Measure:     83.2%
+This chunker does reasonably well, achieving an overall f-measure score of 83%. Let's take a look at what it's learned,
+by using its unigram tagger to assign a tag to each of the part-of-speech tags that appear in the corpus:
+
+ 	
+>>> postags = sorted(set(pos for sent in train_sents
+...                      for (word,pos) in sent.leaves()))
+>>> print unigram_chunker.tagger.tag(postags)
+[('#', 'B-NP'), ('$', 'B-NP'), ("''", 'O'), ('(', 'O'), (')', 'O'),
+ (',', 'O'), ('.', 'O'), (':', 'O'), ('CC', 'O'), ('CD', 'I-NP'),
+ ('DT', 'B-NP'), ('EX', 'B-NP'), ('FW', 'I-NP'), ('IN', 'O'),
+ ('JJ', 'I-NP'), ('JJR', 'B-NP'), ('JJS', 'I-NP'), ('MD', 'O'),
+ ('NN', 'I-NP'), ('NNP', 'I-NP'), ('NNPS', 'I-NP'), ('NNS', 'I-NP'),
+ ('PDT', 'B-NP'), ('POS', 'B-NP'), ('PRP', 'B-NP'), ('PRP$', 'B-NP'),
+ ('RB', 'O'), ('RBR', 'O'), ('RBS', 'B-NP'), ('RP', 'O'), ('SYM', 'O'),
+ ('TO', 'O'), ('UH', 'O'), ('VB', 'O'), ('VBD', 'O'), ('VBG', 'O'),
+ ('VBN', 'O'), ('VBP', 'O'), ('VBZ', 'O'), ('WDT', 'B-NP'),
+ ('WP', 'B-NP'), ('WP$', 'B-NP'), ('WRB', 'O'), ('``', 'O')]
+It has discovered that most punctuation marks occur outside of NP chunks, with the exception of # and $, both of which 
+are used as currency markers. It has also found that determiners (DT) and possessives (PRP$ and WP$) occur at the 
+beginnings of NP chunks, while noun types (NN, NNP, NNPS, NNS) mostly occur inside of NP chunks.
+
+Having built a unigram chunker, it is quite easy to build a bigram chunker: we simply change the class name to 
+BigramChunker, and modify line [2] in 7.8 to construct a BigramTagger rather than a UnigramTagger. The resulting 
+chunker has slightly higher performance than the unigram chunker:
+
+ 	
+>>> bigram_chunker = BigramChunker(train_sents)
+>>> print bigram_chunker.evaluate(test_sents)
+ChunkParse score:
+    IOB Accuracy:  93.3%
+    Precision:     82.3%
+    Recall:        86.8%
+    F-Measure:     84.5%
+
+7.5   Named Entity Recognition
+
+At the start of this chapter, we briefly introduced named entities (NEs). Named entities are definite noun phrases 
+that refer to specific types of individuals, such as organizations, persons, dates, and so on. 7.4 lists some of the 
+more commonly used types of NEs. These should be self-explanatory, except for "Facility": human-made artifacts in the 
+domains of architecture and civil engineering; and "GPE": geo-political entities such as city, state/province, and 
+country.
+
+
+Another major source of difficulty is caused by the fact that many named entity terms are ambiguous. Thus May and 
+North are likely to be parts of named entities for DATE and LOCATION, respectively, but could both be part of a 
+PERSON; conversely Christian Dior looks like a PERSON but is more likely to be of type ORGANIZATION. A term like 
+Yankee will be ordinary modifier in some contexts, but will be marked as an entity of type ORGANIZATION in the phrase 
+Yankee infielders.
+
+Further challenges are posed by multi-word names like Stanford University, and by names that contain other names 
+such as Cecil H. Green Library and Escondido Village Conference Service Center. In named entity recognition, therefore,
+we need to be able to identify the beginning and end of multi-token sequences.
+
+Named entity recognition is a task that is well-suited to the type of classifier-based approach that we saw for noun 
+phrase chunking. In particular, we can build a tagger that labels each word in a sentence using the IOB format, where 
+chunks are labeled by their appropriate type. Here is part of the CONLL 2002 (conll2002) Dutch training data:
+
+Eddy N B-PER
+Bonte N I-PER
+is V O
+woordvoerder N O
+van Prep O
+diezelfde Pron O
+Hogeschool N B-ORG
+. Punc O
+In this representation, there is one token per line, each with its part-of-speech tag and its named entity tag. Based 
+on this training corpus, we can construct a tagger that can be used to label new sentences; and use the 
+nltk.chunk.conlltags2tree() function to convert the tag sequences into a chunk tree.
+
+NLTK provides a classifier that has already been trained to recognize named entities, accessed with the function 
+nltk.ne_chunk(). If we set the parameter binary=True [1], then named entities are just tagged as NE; otherwise, the 
+classifier adds category labels such as PERSON, ORGANIZATION, and GPE.
+
+ 	
+>>> sent = nltk.corpus.treebank.tagged_sents()[22]
+>>> print nltk.ne_chunk(sent, binary=True) [1]
+(S
+  The/DT
+  (NE U.S./NNP)
+  is/VBZ
+  one/CD
+  ...
+  according/VBG
+  to/TO
+  (NE Brooke/NNP T./NNP Mossman/NNP)
+  ...)
+ 	
+>>> print nltk.ne_chunk(sent) 
+(S
+  The/DT
+  (GPE U.S./NNP)
+  is/VBZ
+  one/CD
+  ...
+  according/VBG
+  to/TO
+  (PERSON Brooke/NNP T./NNP Mossman/NNP)
+  ...)
+7.6   Relation Extraction
+
+Once named entities have been identified in a text, we then want to extract the relations that exist between them. 
+As indicated earlier, we will typically be looking for relations between specified types of named entity. One way of 
+approaching this task is to initially look for all triples of the form (X, α, Y), where X and Y are named entities of 
+the required types, and α is the string of words that intervenes between X and Y. We can then use regular expressions 
+to pull out just those instances of α that express the relation that we are looking for. The following example 
+searches for strings that contain the word in. The special regular expression (?!\b.+ing\b) is a negative lookahead 
+assertion that allows us to disregard strings such as success in supervising the transition of, where in is followed 
+by a gerund.
+
+ 	
+>>> IN = re.compile(r'.*\bin\b(?!\b.+ing)')
+>>> for doc in nltk.corpus.ieer.parsed_docs('NYT_19980315'):
+...     for rel in nltk.sem.extract_rels('ORG', 'LOC', doc,
+...                                      corpus='ieer', pattern = IN):
+...         print nltk.sem.show_raw_rtuple(rel)
+[ORG: 'WHYY'] 'in' [LOC: 'Philadelphia']
+[ORG: 'McGlashan &AMP; Sarrail'] 'firm in' [LOC: 'San Mateo']
+[ORG: 'Freedom Forum'] 'in' [LOC: 'Arlington']
+[ORG: 'Brookings Institution'] ', the research group in' [LOC: 'Washington']
+[ORG: 'Idealab'] ', a self-described business incubator based in' [LOC: 'Los Angeles']
+[ORG: 'Open Text'] ', based in' [LOC: 'Waterloo']
+[ORG: 'WGBH'] 'in' [LOC: 'Boston']
+[ORG: 'Bastille Opera'] 'in' [LOC: 'Paris']
+[ORG: 'Omnicom'] 'in' [LOC: 'New York']
+[ORG: 'DDB Needham'] 'in' [LOC: 'New York']
+[ORG: 'Kaplan Thaler Group'] 'in' [LOC: 'New York']
+[ORG: 'BBDO South'] 'in' [LOC: 'Atlanta']
+[ORG: 'Georgia-Pacific'] 'in' [LOC: 'Atlanta']
+Searching for the keyword in works reasonably well, though it will also retrieve false positives such as [ORG: House 
+Transportation Committee] , secured the most money in the [LOC: New York]; there is unlikely to be simple string-based
+method of excluding filler strings such as this.
+
+As shown above, the conll2002 Dutch corpus contains not just named entity annotation but also part-of-speech tags. 
+This allows us to devise patterns that are sensitive to these tags, as shown in the next example. The method 
+show_clause() prints out the relations in a clausal form, where the binary relation symbol is specified as the value 
+of parameter relsym [1].
+
+ 	
+>>> from nltk.corpus import conll2002
+>>> vnv = """
+... (
+... is/V|    # 3rd sing present and
+... was/V|   # past forms of the verb zijn ('be')
+... werd/V|  # and also present
+... wordt/V  # past of worden ('become)
+... )
+... .*       # followed by anything
+... van/Prep # followed by van ('of')
+... """
+>>> VAN = re.compile(vnv, re.VERBOSE)
+>>> for doc in conll2002.chunked_sents('ned.train'):
+...     for r in nltk.sem.extract_rels('PER', 'ORG', doc,
+...                                    corpus='conll2002', pattern=VAN):
+...         print  nltk.sem.show_clause(r, relsym="VAN") [1]
+VAN("cornet_d'elzius", 'buitenlandse_handel')
+VAN('johan_rottiers', 'kardinaal_van_roey_instituut')
+VAN('annie_lennox', 'eurythmics')
+
+
+
+
