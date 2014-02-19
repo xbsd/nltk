@@ -1,5 +1,6 @@
 >>> f = open("AChristmasCarol.txt")
 >>> raw = f.read()
+>>> f.close()
 >>> tokens = nltk.word_tokenize(raw)
 >>> words = [w.lower() for w in tokens]
 >>> words[:20]
