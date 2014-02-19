@@ -40,7 +40,14 @@ the chunker finds an optional determiner (DT) followed by any number of adjectiv
 this grammar, we create a chunk parser [3], and test it on our example sentence [4]. The result is a tree, which we 
 can either print [5], or display graphically [6].
 
- 	
+Tagging
+
+>>> text = nltk.word_tokenize("And now for something completely different")
+>>> nltk.pos_tag(text)
+[('And', 'CC'), ('now', 'RB'), ('for', 'IN'), ('something', 'NN'),
+('completely', 'RB'), ('different', 'JJ')]
+
+
 >>> sentence = [("the", "DT"), ("little", "JJ"), ("yellow", "JJ"), [1]
 ... ("dog", "NN"), ("barked", "VBD"), ("at", "IN"),  ("the", "DT"), ("cat", "NN")]
 
