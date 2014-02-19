@@ -40,29 +40,6 @@ the chunker finds an optional determiner (DT) followed by any number of adjectiv
 this grammar, we create a chunk parser [3], and test it on our example sentence [4]. The result is a tree, which we 
 can either print [5], or display graphically [6].
 
-Tagging
-
->>> text = nltk.word_tokenize("And now for something completely different")
->>> nltk.pos_tag(text)
-[('And', 'CC'), ('now', 'RB'), ('for', 'IN'), ('something', 'NN'),
-('completely', 'RB'), ('different', 'JJ')]
-
-
->>> sentence = [("the", "DT"), ("little", "JJ"), ("yellow", "JJ"), [1]
-... ("dog", "NN"), ("barked", "VBD"), ("at", "IN"),  ("the", "DT"), ("cat", "NN")]
-
->>> grammar = "NP: {<DT>?<JJ>*<NN>}" [2]
-
->>> cp = nltk.RegexpParser(grammar) [3]
->>> result = cp.parse(sentence) [4]
->>> print result [5]
-(S
-  (NP the/DT little/JJ yellow/JJ dog/NN)
-  barked/VBD
-  at/IN
-  (NP the/DT cat/NN))
->>> result.draw()
-
 A Simplified Part-of-Speech Tagset
 
 Tagged corpora use many different conventions for tagging words. To help us get started, we will be looking at a 
@@ -91,6 +68,41 @@ VD	past tense	said, took, told, made, asked
 VG	present participle	making, going, playing, working
 VN	past participle	given, taken, begun, sung
 WH	wh determiner	who, which, when, what, where, how
+
+>>> patterns = [
+...     (r'.*ing$', 'VBG'),               # gerunds
+...     (r'.*ed$', 'VBD'),                # simple past
+...     (r'.*es$', 'VBZ'),                # 3rd singular present
+...     (r'.*ould$', 'MD'),               # modals
+...     (r'.*\'s$', 'NN$'),               # possessive nouns
+...     (r'.*s$', 'NNS'),                 # plural nouns
+...     (r'^-?[0-9]+(.[0-9]+)?$', 'CD'),  # cardinal numbers
+...     (r'.*', 'NN')                     # nouns (default)
+
+
+Tagging
+
+>>> text = nltk.word_tokenize("And now for something completely different")
+>>> nltk.pos_tag(text)
+[('And', 'CC'), ('now', 'RB'), ('for', 'IN'), ('something', 'NN'),
+('completely', 'RB'), ('different', 'JJ')]
+
+
+>>> sentence = [("the", "DT"), ("little", "JJ"), ("yellow", "JJ"), [1]
+... ("dog", "NN"), ("barked", "VBD"), ("at", "IN"),  ("the", "DT"), ("cat", "NN")]
+
+>>> grammar = "NP: {<DT>?<JJ>*<NN>}" [2]
+
+>>> cp = nltk.RegexpParser(grammar) [3]
+>>> result = cp.parse(sentence) [4]
+>>> print result [5]
+(S
+  (NP the/DT little/JJ yellow/JJ dog/NN)
+  barked/VBD
+  at/IN
+  (NP the/DT cat/NN))
+>>> result.draw()
+
 
 Chunking with Regular Expressions
 
