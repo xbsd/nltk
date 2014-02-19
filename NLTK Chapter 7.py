@@ -79,6 +79,18 @@ WH	wh determiner	who, which, when, what, where, how
 ...     (r'^-?[0-9]+(.[0-9]+)?$', 'CD'),  # cardinal numbers
 ...     (r'.*', 'NN')                     # nouns (default)
 
+>>> regexp_tagger = RegexpTagger(
+...     [(r'^-?[0-9]+(.[0-9]+)?$', 'CD'),   # cardinal numbers
+...      (r'(The|the|A|a|An|an)$', 'AT'),   # articles
+...      (r'.*able$', 'JJ'),                # adjectives
+...      (r'.*ness$', 'NN'),                # nouns formed from adjectives
+...      (r'.*ly$', 'RB'),                  # adverbs
+...      (r'.*s$', 'NNS'),                  # plural nouns
+...      (r'.*ing$', 'VBG'),                # gerunds
+...      (r'.*ed$', 'VBD'),                 # past tense verbs
+...      (r'.*', 'NN')                      # nouns (default)
+... ])
+
 
 Tagging
 
