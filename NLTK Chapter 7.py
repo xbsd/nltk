@@ -63,6 +63,34 @@ Tagging
   (NP the/DT cat/NN))
 >>> result.draw()
 
+A Simplified Part-of-Speech Tagset
+
+Tagged corpora use many different conventions for tagging words. To help us get started, we will be looking at a 
+simplified tagset (shown in 5.1).
+
+Table 5.1:
+Simplified Part-of-Speech Tagset
+
+Tag	Meaning	Examples
+ADJ	adjective	new, good, high, special, big, local
+ADV	adverb	really, already, still, early, now
+CNJ	conjunction	and, or, but, if, while, although
+DET	determiner	the, a, some, most, every, no
+EX	existential	there, there's
+FW	foreign word	dolce, ersatz, esprit, quo, maitre
+MOD	modal verb	will, can, would, may, must, should
+N	noun	year, home, costs, time, education
+NP	proper noun	Alison, Africa, April, Washington
+NUM	number	twenty-four, fourth, 1991, 14:24
+PRO	pronoun	he, their, her, its, my, I, us
+P	preposition	on, of, at, with, by, into, under
+TO	the word to	to
+UH	interjection	ah, bang, ha, whee, hmpf, oops
+V	verb	is, has, get, do, make, see, run
+VD	past tense	said, took, told, made, asked
+VG	present participle	making, going, playing, working
+VN	past participle	given, taken, begun, sung
+WH	wh determiner	who, which, when, what, where, how
 
 Chunking with Regular Expressions
 
